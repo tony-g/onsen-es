@@ -1,0 +1,10 @@
+{
+  "name": "onsen-es",
+  "version": "2.5.0",
+  "description": "",
+  "main": "onsenui.js",
+  "module": "onsenui.mjs",
+  "scripts": {},
+  "author": "",
+  "license": "Apache-2"
+}
