@@ -6,1075 +6,6 @@ if (window.customElements) {
     window.customElements.forcePolyfill = true;
 }
 
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
-}
-
-var _global = createCommonjsModule(function (module) {
-// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
-var global = module.exports = typeof window != 'undefined' && window.Math == Math
-  ? window : typeof self != 'undefined' && self.Math == Math ? self : Function('return this')();
-if(typeof __g == 'number')__g = global; // eslint-disable-line no-undef
-});
-
-var _core = createCommonjsModule(function (module) {
-var core = module.exports = {version: '2.4.0'};
-if(typeof __e == 'number')__e = core; // eslint-disable-line no-undef
-});
-
-var _isObject = function(it){
-  return typeof it === 'object' ? it !== null : typeof it === 'function';
-};
-
-var _anObject = function(it){
-  if(!_isObject(it))throw TypeError(it + ' is not an object!');
-  return it;
-};
-
-var _fails = function(exec){
-  try {
-    return !!exec();
-  } catch(e){
-    return true;
-  }
-};
-
-// Thank's IE8 for his funny defineProperty
-var _descriptors = !_fails(function(){
-  return Object.defineProperty({}, 'a', {get: function(){ return 7; }}).a != 7;
-});
-
-var document$1 = _global.document;
-var is = _isObject(document$1) && _isObject(document$1.createElement);
-var _domCreate = function(it){
-  return is ? document$1.createElement(it) : {};
-};
-
-var _ie8DomDefine = !_descriptors && !_fails(function(){
-  return Object.defineProperty(_domCreate('div'), 'a', {get: function(){ return 7; }}).a != 7;
-});
-
-// 7.1.1 ToPrimitive(input [, PreferredType])
-
-// instead of the ES6 spec version, we didn't implement @@toPrimitive case
-// and the second argument - flag - preferred type is a string
-var _toPrimitive = function(it, S){
-  if(!_isObject(it))return it;
-  var fn, val;
-  if(S && typeof (fn = it.toString) == 'function' && !_isObject(val = fn.call(it)))return val;
-  if(typeof (fn = it.valueOf) == 'function' && !_isObject(val = fn.call(it)))return val;
-  if(!S && typeof (fn = it.toString) == 'function' && !_isObject(val = fn.call(it)))return val;
-  throw TypeError("Can't convert object to primitive value");
-};
-
-var dP             = Object.defineProperty;
-
-var f = _descriptors ? Object.defineProperty : function defineProperty(O, P, Attributes){
-  _anObject(O);
-  P = _toPrimitive(P, true);
-  _anObject(Attributes);
-  if(_ie8DomDefine)try {
-    return dP(O, P, Attributes);
-  } catch(e){ /* empty */ }
-  if('get' in Attributes || 'set' in Attributes)throw TypeError('Accessors not supported!');
-  if('value' in Attributes)O[P] = Attributes.value;
-  return O;
-};
-
-var _objectDp = {
-	f: f
-};
-
-var _propertyDesc = function(bitmap, value){
-  return {
-    enumerable  : !(bitmap & 1),
-    configurable: !(bitmap & 2),
-    writable    : !(bitmap & 4),
-    value       : value
-  };
-};
-
-var _hide = _descriptors ? function(object, key, value){
-  return _objectDp.f(object, key, _propertyDesc(1, value));
-} : function(object, key, value){
-  object[key] = value;
-  return object;
-};
-
-var hasOwnProperty = {}.hasOwnProperty;
-var _has = function(it, key){
-  return hasOwnProperty.call(it, key);
-};
-
-var id = 0;
-var px = Math.random();
-var _uid = function(key){
-  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
-};
-
-var _redefine = createCommonjsModule(function (module) {
-var SRC       = _uid('src')
-  , TO_STRING = 'toString'
-  , $toString = Function[TO_STRING]
-  , TPL       = ('' + $toString).split(TO_STRING);
-
-_core.inspectSource = function(it){
-  return $toString.call(it);
-};
-
-(module.exports = function(O, key, val, safe){
-  var isFunction = typeof val == 'function';
-  if(isFunction)_has(val, 'name') || _hide(val, 'name', key);
-  if(O[key] === val)return;
-  if(isFunction)_has(val, SRC) || _hide(val, SRC, O[key] ? '' + O[key] : TPL.join(String(key)));
-  if(O === _global){
-    O[key] = val;
-  } else {
-    if(!safe){
-      delete O[key];
-      _hide(O, key, val);
-    } else {
-      if(O[key])O[key] = val;
-      else _hide(O, key, val);
-    }
-  }
-// add fake Function#toString for correct work wrapped methods / constructors with methods like LoDash isNative
-})(Function.prototype, TO_STRING, function toString(){
-  return typeof this == 'function' && this[SRC] || $toString.call(this);
-});
-});
-
-var _aFunction = function(it){
-  if(typeof it != 'function')throw TypeError(it + ' is not a function!');
-  return it;
-};
-
-// optional / simple context binding
-
-var _ctx = function(fn, that, length){
-  _aFunction(fn);
-  if(that === undefined)return fn;
-  switch(length){
-    case 1: return function(a){
-      return fn.call(that, a);
-    };
-    case 2: return function(a, b){
-      return fn.call(that, a, b);
-    };
-    case 3: return function(a, b, c){
-      return fn.call(that, a, b, c);
-    };
-  }
-  return function(/* ...args */){
-    return fn.apply(that, arguments);
-  };
-};
-
-var PROTOTYPE = 'prototype';
-
-var $export = function(type, name, source){
-  var IS_FORCED = type & $export.F
-    , IS_GLOBAL = type & $export.G
-    , IS_STATIC = type & $export.S
-    , IS_PROTO  = type & $export.P
-    , IS_BIND   = type & $export.B
-    , target    = IS_GLOBAL ? _global : IS_STATIC ? _global[name] || (_global[name] = {}) : (_global[name] || {})[PROTOTYPE]
-    , exports   = IS_GLOBAL ? _core : _core[name] || (_core[name] = {})
-    , expProto  = exports[PROTOTYPE] || (exports[PROTOTYPE] = {})
-    , key, own, out, exp;
-  if(IS_GLOBAL)source = name;
-  for(key in source){
-    // contains in native
-    own = !IS_FORCED && target && target[key] !== undefined;
-    // export native or passed
-    out = (own ? target : source)[key];
-    // bind timers to global for call from export context
-    exp = IS_BIND && own ? _ctx(out, _global) : IS_PROTO && typeof out == 'function' ? _ctx(Function.call, out) : out;
-    // extend global
-    if(target)_redefine(target, key, out, type & $export.U);
-    // export
-    if(exports[key] != out)_hide(exports, key, exp);
-    if(IS_PROTO && expProto[key] != out)expProto[key] = out;
-  }
-};
-_global.core = _core;
-// type bitmap
-$export.F = 1;   // forced
-$export.G = 2;   // global
-$export.S = 4;   // static
-$export.P = 8;   // proto
-$export.B = 16;  // bind
-$export.W = 32;  // wrap
-$export.U = 64;  // safe
-$export.R = 128; // real proto method for `library` 
-var _export = $export;
-
-var f$2 = {}.propertyIsEnumerable;
-
-var _objectPie = {
-	f: f$2
-};
-
-var toString = {}.toString;
-
-var _cof = function(it){
-  return toString.call(it).slice(8, -1);
-};
-
-// fallback for non-array-like ES3 and non-enumerable old V8 strings
-
-var _iobject = Object('z').propertyIsEnumerable(0) ? Object : function(it){
-  return _cof(it) == 'String' ? it.split('') : Object(it);
-};
-
-// 7.2.1 RequireObjectCoercible(argument)
-var _defined = function(it){
-  if(it == undefined)throw TypeError("Can't call method on  " + it);
-  return it;
-};
-
-// to indexed object, toObject with fallback for non-array-like ES3 strings
-
-var _toIobject = function(it){
-  return _iobject(_defined(it));
-};
-
-var gOPD           = Object.getOwnPropertyDescriptor;
-
-var f$1 = _descriptors ? gOPD : function getOwnPropertyDescriptor(O, P){
-  O = _toIobject(O);
-  P = _toPrimitive(P, true);
-  if(_ie8DomDefine)try {
-    return gOPD(O, P);
-  } catch(e){ /* empty */ }
-  if(_has(O, P))return _propertyDesc(!_objectPie.f.call(O, P), O[P]);
-};
-
-var _objectGopd = {
-	f: f$1
-};
-
-// Works with __proto__ only. Old v8 can't work with null proto objects.
-/* eslint-disable no-proto */
-
-var check = function(O, proto){
-  _anObject(O);
-  if(!_isObject(proto) && proto !== null)throw TypeError(proto + ": can't set as prototype!");
-};
-var _setProto = {
-  set: Object.setPrototypeOf || ('__proto__' in {} ? // eslint-disable-line
-    function(test, buggy, set){
-      try {
-        set = _ctx(Function.call, _objectGopd.f(Object.prototype, '__proto__').set, 2);
-        set(test, []);
-        buggy = !(test instanceof Array);
-      } catch(e){ buggy = true; }
-      return function setPrototypeOf(O, proto){
-        check(O, proto);
-        if(buggy)O.__proto__ = proto;
-        else set(O, proto);
-        return O;
-      };
-    }({}, false) : undefined),
-  check: check
-};
-
-// 19.1.3.19 Object.setPrototypeOf(O, proto)
-
-_export(_export.S, 'Object', {setPrototypeOf: _setProto.set});
-
-var SHARED = '__core-js_shared__';
-var store  = _global[SHARED] || (_global[SHARED] = {});
-var _shared = function(key){
-  return store[key] || (store[key] = {});
-};
-
-var _wks = createCommonjsModule(function (module) {
-var store      = _shared('wks')
-  , Symbol     = _global.Symbol
-  , USE_SYMBOL = typeof Symbol == 'function';
-
-var $exports = module.exports = function(name){
-  return store[name] || (store[name] =
-    USE_SYMBOL && Symbol[name] || (USE_SYMBOL ? Symbol : _uid)('Symbol.' + name));
-};
-
-$exports.store = store;
-});
-
-// getting tag from 19.1.3.6 Object.prototype.toString()
-var TAG = _wks('toStringTag');
-var ARG = _cof(function(){ return arguments; }()) == 'Arguments';
-
-// fallback for IE11 Script Access Denied error
-var tryGet = function(it, key){
-  try {
-    return it[key];
-  } catch(e){ /* empty */ }
-};
-
-var _classof = function(it){
-  var O, T, B;
-  return it === undefined ? 'Undefined' : it === null ? 'Null'
-    // @@toStringTag case
-    : typeof (T = tryGet(O = Object(it), TAG)) == 'string' ? T
-    // builtinTag case
-    : ARG ? _cof(O)
-    // ES3 arguments fallback
-    : (B = _cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
-};
-
-'use strict';
-// 19.1.3.6 Object.prototype.toString()
-var test    = {};
-test[_wks('toStringTag')] = 'z';
-if(test + '' != '[object z]'){
-  _redefine(Object.prototype, 'toString', function toString(){
-    return '[object ' + _classof(this) + ']';
-  }, true);
-}
-
-// 7.1.4 ToInteger
-var ceil  = Math.ceil;
-var floor = Math.floor;
-var _toInteger = function(it){
-  return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
-};
-
-// true  -> String#at
-// false -> String#codePointAt
-var _stringAt = function(TO_STRING){
-  return function(that, pos){
-    var s = String(_defined(that))
-      , i = _toInteger(pos)
-      , l = s.length
-      , a, b;
-    if(i < 0 || i >= l)return TO_STRING ? '' : undefined;
-    a = s.charCodeAt(i);
-    return a < 0xd800 || a > 0xdbff || i + 1 === l || (b = s.charCodeAt(i + 1)) < 0xdc00 || b > 0xdfff
-      ? TO_STRING ? s.charAt(i) : a
-      : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
-  };
-};
-
-var _library = false;
-
-var _iterators = {};
-
-// 7.1.15 ToLength
-var min       = Math.min;
-var _toLength = function(it){
-  return it > 0 ? min(_toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
-};
-
-var max       = Math.max;
-var min$1       = Math.min;
-var _toIndex = function(index, length){
-  index = _toInteger(index);
-  return index < 0 ? max(index + length, 0) : min$1(index, length);
-};
-
-// false -> Array#indexOf
-// true  -> Array#includes
-
-var _arrayIncludes = function(IS_INCLUDES){
-  return function($this, el, fromIndex){
-    var O      = _toIobject($this)
-      , length = _toLength(O.length)
-      , index  = _toIndex(fromIndex, length)
-      , value;
-    // Array#includes uses SameValueZero equality algorithm
-    if(IS_INCLUDES && el != el)while(length > index){
-      value = O[index++];
-      if(value != value)return true;
-    // Array#toIndex ignores holes, Array#includes - not
-    } else for(;length > index; index++)if(IS_INCLUDES || index in O){
-      if(O[index] === el)return IS_INCLUDES || index || 0;
-    } return !IS_INCLUDES && -1;
-  };
-};
-
-var shared = _shared('keys');
-var _sharedKey = function(key){
-  return shared[key] || (shared[key] = _uid(key));
-};
-
-var arrayIndexOf = _arrayIncludes(false);
-var IE_PROTO$1     = _sharedKey('IE_PROTO');
-
-var _objectKeysInternal = function(object, names){
-  var O      = _toIobject(object)
-    , i      = 0
-    , result = []
-    , key;
-  for(key in O)if(key != IE_PROTO$1)_has(O, key) && result.push(key);
-  // Don't enum bug & hidden keys
-  while(names.length > i)if(_has(O, key = names[i++])){
-    ~arrayIndexOf(result, key) || result.push(key);
-  }
-  return result;
-};
-
-// IE 8- don't enum bug keys
-var _enumBugKeys = (
-  'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
-).split(',');
-
-// 19.1.2.14 / 15.2.3.14 Object.keys(O)
-
-
-var _objectKeys = Object.keys || function keys(O){
-  return _objectKeysInternal(O, _enumBugKeys);
-};
-
-var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties){
-  _anObject(O);
-  var keys   = _objectKeys(Properties)
-    , length = keys.length
-    , i = 0
-    , P;
-  while(length > i)_objectDp.f(O, P = keys[i++], Properties[P]);
-  return O;
-};
-
-var _html = _global.document && document.documentElement;
-
-// 19.1.2.2 / 15.2.3.5 Object.create(O [, Properties])
-var IE_PROTO    = _sharedKey('IE_PROTO');
-var Empty       = function(){ /* empty */ };
-var PROTOTYPE$1   = 'prototype';
-
-// Create object with fake `null` prototype: use iframe Object with cleared prototype
-var createDict = function(){
-  // Thrash, waste and sodomy: IE GC bug
-  var iframe = _domCreate('iframe')
-    , i      = _enumBugKeys.length
-    , lt     = '<'
-    , gt     = '>'
-    , iframeDocument;
-  iframe.style.display = 'none';
-  _html.appendChild(iframe);
-  iframe.src = 'javascript:'; // eslint-disable-line no-script-url
-  // createDict = iframe.contentWindow.Object;
-  // html.removeChild(iframe);
-  iframeDocument = iframe.contentWindow.document;
-  iframeDocument.open();
-  iframeDocument.write(lt + 'script' + gt + 'document.F=Object' + lt + '/script' + gt);
-  iframeDocument.close();
-  createDict = iframeDocument.F;
-  while(i--)delete createDict[PROTOTYPE$1][_enumBugKeys[i]];
-  return createDict();
-};
-
-var _objectCreate = Object.create || function create(O, Properties){
-  var result;
-  if(O !== null){
-    Empty[PROTOTYPE$1] = _anObject(O);
-    result = new Empty;
-    Empty[PROTOTYPE$1] = null;
-    // add "__proto__" for Object.getPrototypeOf polyfill
-    result[IE_PROTO] = O;
-  } else result = createDict();
-  return Properties === undefined ? result : _objectDps(result, Properties);
-};
-
-var def = _objectDp.f;
-var TAG$1 = _wks('toStringTag');
-
-var _setToStringTag = function(it, tag, stat){
-  if(it && !_has(it = stat ? it : it.prototype, TAG$1))def(it, TAG$1, {configurable: true, value: tag});
-};
-
-'use strict';
-var IteratorPrototype = {};
-
-// 25.1.2.1.1 %IteratorPrototype%[@@iterator]()
-_hide(IteratorPrototype, _wks('iterator'), function(){ return this; });
-
-var _iterCreate = function(Constructor, NAME, next){
-  Constructor.prototype = _objectCreate(IteratorPrototype, {next: _propertyDesc(1, next)});
-  _setToStringTag(Constructor, NAME + ' Iterator');
-};
-
-// 7.1.13 ToObject(argument)
-
-var _toObject = function(it){
-  return Object(_defined(it));
-};
-
-// 19.1.2.9 / 15.2.3.2 Object.getPrototypeOf(O)
-var IE_PROTO$2    = _sharedKey('IE_PROTO');
-var ObjectProto = Object.prototype;
-
-var _objectGpo = Object.getPrototypeOf || function(O){
-  O = _toObject(O);
-  if(_has(O, IE_PROTO$2))return O[IE_PROTO$2];
-  if(typeof O.constructor == 'function' && O instanceof O.constructor){
-    return O.constructor.prototype;
-  } return O instanceof Object ? ObjectProto : null;
-};
-
-'use strict';
-var ITERATOR       = _wks('iterator');
-var BUGGY          = !([].keys && 'next' in [].keys());
-var FF_ITERATOR    = '@@iterator';
-var KEYS           = 'keys';
-var VALUES         = 'values';
-
-var returnThis = function(){ return this; };
-
-var _iterDefine = function(Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCED){
-  _iterCreate(Constructor, NAME, next);
-  var getMethod = function(kind){
-    if(!BUGGY && kind in proto)return proto[kind];
-    switch(kind){
-      case KEYS: return function keys(){ return new Constructor(this, kind); };
-      case VALUES: return function values(){ return new Constructor(this, kind); };
-    } return function entries(){ return new Constructor(this, kind); };
-  };
-  var TAG        = NAME + ' Iterator'
-    , DEF_VALUES = DEFAULT == VALUES
-    , VALUES_BUG = false
-    , proto      = Base.prototype
-    , $native    = proto[ITERATOR] || proto[FF_ITERATOR] || DEFAULT && proto[DEFAULT]
-    , $default   = $native || getMethod(DEFAULT)
-    , $entries   = DEFAULT ? !DEF_VALUES ? $default : getMethod('entries') : undefined
-    , $anyNative = NAME == 'Array' ? proto.entries || $native : $native
-    , methods, key, IteratorPrototype;
-  // Fix native
-  if($anyNative){
-    IteratorPrototype = _objectGpo($anyNative.call(new Base));
-    if(IteratorPrototype !== Object.prototype){
-      // Set @@toStringTag to native iterators
-      _setToStringTag(IteratorPrototype, TAG, true);
-      // fix for some old engines
-      if(!_library && !_has(IteratorPrototype, ITERATOR))_hide(IteratorPrototype, ITERATOR, returnThis);
-    }
-  }
-  // fix Array#{values, @@iterator}.name in V8 / FF
-  if(DEF_VALUES && $native && $native.name !== VALUES){
-    VALUES_BUG = true;
-    $default = function values(){ return $native.call(this); };
-  }
-  // Define iterator
-  if((!_library || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR])){
-    _hide(proto, ITERATOR, $default);
-  }
-  // Plug for library
-  _iterators[NAME] = $default;
-  _iterators[TAG]  = returnThis;
-  if(DEFAULT){
-    methods = {
-      values:  DEF_VALUES ? $default : getMethod(VALUES),
-      keys:    IS_SET     ? $default : getMethod(KEYS),
-      entries: $entries
-    };
-    if(FORCED)for(key in methods){
-      if(!(key in proto))_redefine(proto, key, methods[key]);
-    } else _export(_export.P + _export.F * (BUGGY || VALUES_BUG), NAME, methods);
-  }
-  return methods;
-};
-
-'use strict';
-var $at  = _stringAt(true);
-
-// 21.1.3.27 String.prototype[@@iterator]()
-_iterDefine(String, 'String', function(iterated){
-  this._t = String(iterated); // target
-  this._i = 0;                // next index
-// 21.1.5.2.1 %StringIteratorPrototype%.next()
-}, function(){
-  var O     = this._t
-    , index = this._i
-    , point;
-  if(index >= O.length)return {value: undefined, done: true};
-  point = $at(O, index);
-  this._i += point.length;
-  return {value: point, done: false};
-});
-
-// 22.1.3.31 Array.prototype[@@unscopables]
-var UNSCOPABLES = _wks('unscopables');
-var ArrayProto  = Array.prototype;
-if(ArrayProto[UNSCOPABLES] == undefined)_hide(ArrayProto, UNSCOPABLES, {});
-var _addToUnscopables = function(key){
-  ArrayProto[UNSCOPABLES][key] = true;
-};
-
-var _iterStep = function(done, value){
-  return {value: value, done: !!done};
-};
-
-'use strict';
-
-
-// 22.1.3.4 Array.prototype.entries()
-// 22.1.3.13 Array.prototype.keys()
-// 22.1.3.29 Array.prototype.values()
-// 22.1.3.30 Array.prototype[@@iterator]()
-var es6_array_iterator = _iterDefine(Array, 'Array', function(iterated, kind){
-  this._t = _toIobject(iterated); // target
-  this._i = 0;                   // next index
-  this._k = kind;                // kind
-// 22.1.5.2.1 %ArrayIteratorPrototype%.next()
-}, function(){
-  var O     = this._t
-    , kind  = this._k
-    , index = this._i++;
-  if(!O || index >= O.length){
-    this._t = undefined;
-    return _iterStep(1);
-  }
-  if(kind == 'keys'  )return _iterStep(0, index);
-  if(kind == 'values')return _iterStep(0, O[index]);
-  return _iterStep(0, [index, O[index]]);
-}, 'values');
-
-// argumentsList[@@iterator] is %ArrayProto_values% (9.4.4.6, 9.4.4.7)
-_iterators.Arguments = _iterators.Array;
-
-_addToUnscopables('keys');
-_addToUnscopables('values');
-_addToUnscopables('entries');
-
-var ITERATOR$1      = _wks('iterator');
-var TO_STRING_TAG = _wks('toStringTag');
-var ArrayValues   = _iterators.Array;
-
-for(var collections = ['NodeList', 'DOMTokenList', 'MediaList', 'StyleSheetList', 'CSSRuleList'], i = 0; i < 5; i++){
-  var NAME       = collections[i]
-    , Collection = _global[NAME]
-    , proto      = Collection && Collection.prototype
-    , key;
-  if(proto){
-    if(!proto[ITERATOR$1])_hide(proto, ITERATOR$1, ArrayValues);
-    if(!proto[TO_STRING_TAG])_hide(proto, TO_STRING_TAG, NAME);
-    _iterators[NAME] = ArrayValues;
-    for(key in es6_array_iterator)if(!proto[key])_redefine(proto, key, es6_array_iterator[key], true);
-  }
-}
-
-var _redefineAll = function(target, src, safe){
-  for(var key in src)_redefine(target, key, src[key], safe);
-  return target;
-};
-
-var _anInstance = function(it, Constructor, name, forbiddenField){
-  if(!(it instanceof Constructor) || (forbiddenField !== undefined && forbiddenField in it)){
-    throw TypeError(name + ': incorrect invocation!');
-  } return it;
-};
-
-// call something on iterator step with safe closing on error
-
-var _iterCall = function(iterator, fn, value, entries){
-  try {
-    return entries ? fn(_anObject(value)[0], value[1]) : fn(value);
-  // 7.4.6 IteratorClose(iterator, completion)
-  } catch(e){
-    var ret = iterator['return'];
-    if(ret !== undefined)_anObject(ret.call(iterator));
-    throw e;
-  }
-};
-
-// check on default Array iterator
-var ITERATOR$2   = _wks('iterator');
-var ArrayProto$1 = Array.prototype;
-
-var _isArrayIter = function(it){
-  return it !== undefined && (_iterators.Array === it || ArrayProto$1[ITERATOR$2] === it);
-};
-
-var ITERATOR$3  = _wks('iterator');
-var core_getIteratorMethod = _core.getIteratorMethod = function(it){
-  if(it != undefined)return it[ITERATOR$3]
-    || it['@@iterator']
-    || _iterators[_classof(it)];
-};
-
-var _forOf = createCommonjsModule(function (module) {
-var BREAK       = {}
-  , RETURN      = {};
-var exports = module.exports = function(iterable, entries, fn, that, ITERATOR){
-  var iterFn = ITERATOR ? function(){ return iterable; } : core_getIteratorMethod(iterable)
-    , f      = _ctx(fn, that, entries ? 2 : 1)
-    , index  = 0
-    , length, step, iterator, result;
-  if(typeof iterFn != 'function')throw TypeError(iterable + ' is not iterable!');
-  // fast case for arrays with default iterator
-  if(_isArrayIter(iterFn))for(length = _toLength(iterable.length); length > index; index++){
-    result = entries ? f(_anObject(step = iterable[index])[0], step[1]) : f(iterable[index]);
-    if(result === BREAK || result === RETURN)return result;
-  } else for(iterator = iterFn.call(iterable); !(step = iterator.next()).done; ){
-    result = _iterCall(iterator, f, step.value, entries);
-    if(result === BREAK || result === RETURN)return result;
-  }
-};
-exports.BREAK  = BREAK;
-exports.RETURN = RETURN;
-});
-
-'use strict';
-var SPECIES     = _wks('species');
-
-var _setSpecies = function(KEY){
-  var C = _global[KEY];
-  if(_descriptors && C && !C[SPECIES])_objectDp.f(C, SPECIES, {
-    configurable: true,
-    get: function(){ return this; }
-  });
-};
-
-var _meta = createCommonjsModule(function (module) {
-var META     = _uid('meta')
-  , setDesc  = _objectDp.f
-  , id       = 0;
-var isExtensible = Object.isExtensible || function(){
-  return true;
-};
-var FREEZE = !_fails(function(){
-  return isExtensible(Object.preventExtensions({}));
-});
-var setMeta = function(it){
-  setDesc(it, META, {value: {
-    i: 'O' + ++id, // object ID
-    w: {}          // weak collections IDs
-  }});
-};
-var fastKey = function(it, create){
-  // return primitive with prefix
-  if(!_isObject(it))return typeof it == 'symbol' ? it : (typeof it == 'string' ? 'S' : 'P') + it;
-  if(!_has(it, META)){
-    // can't set metadata to uncaught frozen object
-    if(!isExtensible(it))return 'F';
-    // not necessary to add metadata
-    if(!create)return 'E';
-    // add missing metadata
-    setMeta(it);
-  // return object ID
-  } return it[META].i;
-};
-var getWeak = function(it, create){
-  if(!_has(it, META)){
-    // can't set metadata to uncaught frozen object
-    if(!isExtensible(it))return true;
-    // not necessary to add metadata
-    if(!create)return false;
-    // add missing metadata
-    setMeta(it);
-  // return hash weak collections IDs
-  } return it[META].w;
-};
-// add metadata on freeze-family methods calling
-var onFreeze = function(it){
-  if(FREEZE && meta.NEED && isExtensible(it) && !_has(it, META))setMeta(it);
-  return it;
-};
-var meta = module.exports = {
-  KEY:      META,
-  NEED:     false,
-  fastKey:  fastKey,
-  getWeak:  getWeak,
-  onFreeze: onFreeze
-};
-});
-
-'use strict';
-var dP$1          = _objectDp.f;
-var fastKey     = _meta.fastKey;
-var SIZE        = _descriptors ? '_s' : 'size';
-
-var getEntry = function(that, key){
-  // fast case
-  var index = fastKey(key), entry;
-  if(index !== 'F')return that._i[index];
-  // frozen object case
-  for(entry = that._f; entry; entry = entry.n){
-    if(entry.k == key)return entry;
-  }
-};
-
-var _collectionStrong = {
-  getConstructor: function(wrapper, NAME, IS_MAP, ADDER){
-    var C = wrapper(function(that, iterable){
-      _anInstance(that, C, NAME, '_i');
-      that._i = _objectCreate(null); // index
-      that._f = undefined;    // first entry
-      that._l = undefined;    // last entry
-      that[SIZE] = 0;         // size
-      if(iterable != undefined)_forOf(iterable, IS_MAP, that[ADDER], that);
-    });
-    _redefineAll(C.prototype, {
-      // 23.1.3.1 Map.prototype.clear()
-      // 23.2.3.2 Set.prototype.clear()
-      clear: function clear(){
-        for(var that = this, data = that._i, entry = that._f; entry; entry = entry.n){
-          entry.r = true;
-          if(entry.p)entry.p = entry.p.n = undefined;
-          delete data[entry.i];
-        }
-        that._f = that._l = undefined;
-        that[SIZE] = 0;
-      },
-      // 23.1.3.3 Map.prototype.delete(key)
-      // 23.2.3.4 Set.prototype.delete(value)
-      'delete': function(key){
-        var that  = this
-          , entry = getEntry(that, key);
-        if(entry){
-          var next = entry.n
-            , prev = entry.p;
-          delete that._i[entry.i];
-          entry.r = true;
-          if(prev)prev.n = next;
-          if(next)next.p = prev;
-          if(that._f == entry)that._f = next;
-          if(that._l == entry)that._l = prev;
-          that[SIZE]--;
-        } return !!entry;
-      },
-      // 23.2.3.6 Set.prototype.forEach(callbackfn, thisArg = undefined)
-      // 23.1.3.5 Map.prototype.forEach(callbackfn, thisArg = undefined)
-      forEach: function forEach(callbackfn /*, that = undefined */){
-        _anInstance(this, C, 'forEach');
-        var f = _ctx(callbackfn, arguments.length > 1 ? arguments[1] : undefined, 3)
-          , entry;
-        while(entry = entry ? entry.n : this._f){
-          f(entry.v, entry.k, this);
-          // revert to the last existing entry
-          while(entry && entry.r)entry = entry.p;
-        }
-      },
-      // 23.1.3.7 Map.prototype.has(key)
-      // 23.2.3.7 Set.prototype.has(value)
-      has: function has(key){
-        return !!getEntry(this, key);
-      }
-    });
-    if(_descriptors)dP$1(C.prototype, 'size', {
-      get: function(){
-        return _defined(this[SIZE]);
-      }
-    });
-    return C;
-  },
-  def: function(that, key, value){
-    var entry = getEntry(that, key)
-      , prev, index;
-    // change existing entry
-    if(entry){
-      entry.v = value;
-    // create new entry
-    } else {
-      that._l = entry = {
-        i: index = fastKey(key, true), // <- index
-        k: key,                        // <- key
-        v: value,                      // <- value
-        p: prev = that._l,             // <- previous entry
-        n: undefined,                  // <- next entry
-        r: false                       // <- removed
-      };
-      if(!that._f)that._f = entry;
-      if(prev)prev.n = entry;
-      that[SIZE]++;
-      // add to index
-      if(index !== 'F')that._i[index] = entry;
-    } return that;
-  },
-  getEntry: getEntry,
-  setStrong: function(C, NAME, IS_MAP){
-    // add .keys, .values, .entries, [@@iterator]
-    // 23.1.3.4, 23.1.3.8, 23.1.3.11, 23.1.3.12, 23.2.3.5, 23.2.3.8, 23.2.3.10, 23.2.3.11
-    _iterDefine(C, NAME, function(iterated, kind){
-      this._t = iterated;  // target
-      this._k = kind;      // kind
-      this._l = undefined; // previous
-    }, function(){
-      var that  = this
-        , kind  = that._k
-        , entry = that._l;
-      // revert to the last existing entry
-      while(entry && entry.r)entry = entry.p;
-      // get next entry
-      if(!that._t || !(that._l = entry = entry ? entry.n : that._t._f)){
-        // or finish the iteration
-        that._t = undefined;
-        return _iterStep(1);
-      }
-      // return step by kind
-      if(kind == 'keys'  )return _iterStep(0, entry.k);
-      if(kind == 'values')return _iterStep(0, entry.v);
-      return _iterStep(0, [entry.k, entry.v]);
-    }, IS_MAP ? 'entries' : 'values' , !IS_MAP, true);
-
-    // add [@@species], 23.1.2.2, 23.2.2.2
-    _setSpecies(NAME);
-  }
-};
-
-var ITERATOR$4     = _wks('iterator');
-var SAFE_CLOSING = false;
-
-try {
-  var riter = [7][ITERATOR$4]();
-  riter['return'] = function(){ SAFE_CLOSING = true; };
-  
-} catch(e){ /* empty */ }
-
-var _iterDetect = function(exec, skipClosing){
-  if(!skipClosing && !SAFE_CLOSING)return false;
-  var safe = false;
-  try {
-    var arr  = [7]
-      , iter = arr[ITERATOR$4]();
-    iter.next = function(){ return {done: safe = true}; };
-    arr[ITERATOR$4] = function(){ return iter; };
-    exec(arr);
-  } catch(e){ /* empty */ }
-  return safe;
-};
-
-var setPrototypeOf$2 = _setProto.set;
-var _inheritIfRequired = function(that, target, C){
-  var P, S = target.constructor;
-  if(S !== C && typeof S == 'function' && (P = S.prototype) !== C.prototype && _isObject(P) && setPrototypeOf$2){
-    setPrototypeOf$2(that, P);
-  } return that;
-};
-
-'use strict';
-
-
-var _collection = function(NAME, wrapper, methods, common, IS_MAP, IS_WEAK){
-  var Base  = _global[NAME]
-    , C     = Base
-    , ADDER = IS_MAP ? 'set' : 'add'
-    , proto = C && C.prototype
-    , O     = {};
-  var fixMethod = function(KEY){
-    var fn = proto[KEY];
-    _redefine(proto, KEY,
-      KEY == 'delete' ? function(a){
-        return IS_WEAK && !_isObject(a) ? false : fn.call(this, a === 0 ? 0 : a);
-      } : KEY == 'has' ? function has(a){
-        return IS_WEAK && !_isObject(a) ? false : fn.call(this, a === 0 ? 0 : a);
-      } : KEY == 'get' ? function get(a){
-        return IS_WEAK && !_isObject(a) ? undefined : fn.call(this, a === 0 ? 0 : a);
-      } : KEY == 'add' ? function add(a){ fn.call(this, a === 0 ? 0 : a); return this; }
-        : function set(a, b){ fn.call(this, a === 0 ? 0 : a, b); return this; }
-    );
-  };
-  if(typeof C != 'function' || !(IS_WEAK || proto.forEach && !_fails(function(){
-    new C().entries().next();
-  }))){
-    // create collection constructor
-    C = common.getConstructor(wrapper, NAME, IS_MAP, ADDER);
-    _redefineAll(C.prototype, methods);
-    _meta.NEED = true;
-  } else {
-    var instance             = new C
-      // early implementations not supports chaining
-      , HASNT_CHAINING       = instance[ADDER](IS_WEAK ? {} : -0, 1) != instance
-      // V8 ~  Chromium 40- weak-collections throws on primitives, but should return false
-      , THROWS_ON_PRIMITIVES = _fails(function(){ instance.has(1); })
-      // most early implementations doesn't supports iterables, most modern - not close it correctly
-      , ACCEPT_ITERABLES     = _iterDetect(function(iter){ new C(iter); }) // eslint-disable-line no-new
-      // for early implementations -0 and +0 not the same
-      , BUGGY_ZERO = !IS_WEAK && _fails(function(){
-        // V8 ~ Chromium 42- fails only with 5+ elements
-        var $instance = new C()
-          , index     = 5;
-        while(index--)$instance[ADDER](index, index);
-        return !$instance.has(-0);
-      });
-    if(!ACCEPT_ITERABLES){ 
-      C = wrapper(function(target, iterable){
-        _anInstance(target, C, NAME);
-        var that = _inheritIfRequired(new Base, target, C);
-        if(iterable != undefined)_forOf(iterable, IS_MAP, that[ADDER], that);
-        return that;
-      });
-      C.prototype = proto;
-      proto.constructor = C;
-    }
-    if(THROWS_ON_PRIMITIVES || BUGGY_ZERO){
-      fixMethod('delete');
-      fixMethod('has');
-      IS_MAP && fixMethod('get');
-    }
-    if(BUGGY_ZERO || HASNT_CHAINING)fixMethod(ADDER);
-    // weak collections should not contains .clear method
-    if(IS_WEAK && proto.clear)delete proto.clear;
-  }
-
-  _setToStringTag(C, NAME);
-
-  O[NAME] = C;
-  _export(_export.G + _export.W + _export.F * (C != Base), O);
-
-  if(!IS_WEAK)common.setStrong(C, NAME, IS_MAP);
-
-  return C;
-};
-
-'use strict';
-
-
-// 23.2 Set Objects
-var es6_set = _collection('Set', function(get){
-  return function Set(){ return get(this, arguments.length > 0 ? arguments[0] : undefined); };
-}, {
-  // 23.2.3.1 Set.prototype.add(value)
-  add: function add(value){
-    return _collectionStrong.def(this, value = value === 0 ? 0 : value, value);
-  }
-}, _collectionStrong);
-
-var _arrayFromIterable = function(iter, ITERATOR){
-  var result = [];
-  _forOf(iter, false, result.push, result, ITERATOR);
-  return result;
-};
-
-// https://github.com/DavidBruant/Map-Set.prototype.toJSON
-
-var _collectionToJson = function(NAME){
-  return function toJSON(){
-    if(_classof(this) != NAME)throw TypeError(NAME + "#toJSON isn't generic");
-    return _arrayFromIterable(this);
-  };
-};
-
-// https://github.com/DavidBruant/Map-Set.prototype.toJSON
-
-
-_export(_export.P + _export.R, 'Set', {toJSON: _collectionToJson('Set')});
-
-'use strict';
-
-
-// 23.1 Map Objects
-var es6_map = _collection('Map', function(get){
-  return function Map(){ return get(this, arguments.length > 0 ? arguments[0] : undefined); };
-}, {
-  // 23.1.3.6 Map.prototype.get(key)
-  get: function get(key){
-    var entry = _collectionStrong.getEntry(this, key);
-    return entry && entry.v;
-  },
-  // 23.1.3.9 Map.prototype.set(key, value)
-  set: function set(key, value){
-    return _collectionStrong.def(this, key === 0 ? 0 : key, value);
-  }
-}, _collectionStrong, true);
-
-// https://github.com/DavidBruant/Map-Set.prototype.toJSON
-
-
-_export(_export.P + _export.R, 'Map', {toJSON: _collectionToJson('Map')});
-
 const reservedTagList = new Set([
   'annotation-xml',
   'color-profile',
@@ -2679,358 +1610,7 @@ if (!priorCustomElements ||
   });
 }
 
-/**
- * @license
- * Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
- */
-// @version 0.7.22
-if (typeof WeakMap === "undefined") {
-  (function () {
-    var defineProperty = Object.defineProperty;
-    var counter = Date.now() % 1e9;
-    var WeakMap = function WeakMap() {
-      this.name = "__st" + (Math.random() * 1e9 >>> 0) + (counter++ + "__");
-    };
-    WeakMap.prototype = {
-      set: function set(key, value) {
-        var entry = key[this.name];
-        if (entry && entry[0] === key) entry[1] = value;else defineProperty(key, this.name, {
-          value: [key, value],
-          writable: true
-        });
-        return this;
-      },
-      get: function get(key) {
-        var entry;
-        return (entry = key[this.name]) && entry[0] === key ? entry[1] : undefined;
-      },
-      "delete": function _delete(key) {
-        var entry = key[this.name];
-        if (!entry || entry[0] !== key) return false;
-        entry[0] = entry[1] = undefined;
-        return true;
-      },
-      has: function has(key) {
-        var entry = key[this.name];
-        if (!entry) return false;
-        return entry[0] === key;
-      }
-    };
-    window.WeakMap = WeakMap;
-  })();
-}
-
-(function (global) {
-  if (global.JsMutationObserver) {
-    return;
-  }
-  var registrationsTable = new WeakMap();
-  var setImmediate;
-  if (/Trident|Edge/.test(navigator.userAgent)) {
-    setImmediate = setTimeout;
-  } else if (window.setImmediate) {
-    setImmediate = window.setImmediate;
-  } else {
-    var setImmediateQueue = [];
-    var sentinel = String(Math.random());
-    window.addEventListener("message", function (e) {
-      if (e.data === sentinel) {
-        var queue = setImmediateQueue;
-        setImmediateQueue = [];
-        queue.forEach(function (func) {
-          func();
-        });
-      }
-    });
-    setImmediate = function setImmediate(func) {
-      setImmediateQueue.push(func);
-      window.postMessage(sentinel, "*");
-    };
-  }
-  var isScheduled = false;
-  var scheduledObservers = [];
-  function scheduleCallback(observer) {
-    scheduledObservers.push(observer);
-    if (!isScheduled) {
-      isScheduled = true;
-      setImmediate(dispatchCallbacks);
-    }
-  }
-  function wrapIfNeeded(node) {
-    return window.ShadowDOMPolyfill && window.ShadowDOMPolyfill.wrapIfNeeded(node) || node;
-  }
-  function dispatchCallbacks() {
-    isScheduled = false;
-    var observers = scheduledObservers;
-    scheduledObservers = [];
-    observers.sort(function (o1, o2) {
-      return o1.uid_ - o2.uid_;
-    });
-    var anyNonEmpty = false;
-    observers.forEach(function (observer) {
-      var queue = observer.takeRecords();
-      removeTransientObserversFor(observer);
-      if (queue.length) {
-        observer.callback_(queue, observer);
-        anyNonEmpty = true;
-      }
-    });
-    if (anyNonEmpty) dispatchCallbacks();
-  }
-  function removeTransientObserversFor(observer) {
-    observer.nodes_.forEach(function (node) {
-      var registrations = registrationsTable.get(node);
-      if (!registrations) return;
-      registrations.forEach(function (registration) {
-        if (registration.observer === observer) registration.removeTransientObservers();
-      });
-    });
-  }
-  function forEachAncestorAndObserverEnqueueRecord(target, callback) {
-    for (var node = target; node; node = node.parentNode) {
-      var registrations = registrationsTable.get(node);
-      if (registrations) {
-        for (var j = 0; j < registrations.length; j++) {
-          var registration = registrations[j];
-          var options = registration.options;
-          if (node !== target && !options.subtree) continue;
-          var record = callback(options);
-          if (record) registration.enqueue(record);
-        }
-      }
-    }
-  }
-  var uidCounter = 0;
-  function JsMutationObserver(callback) {
-    this.callback_ = callback;
-    this.nodes_ = [];
-    this.records_ = [];
-    this.uid_ = ++uidCounter;
-  }
-  JsMutationObserver.prototype = {
-    observe: function observe(target, options) {
-      target = wrapIfNeeded(target);
-      if (!options.childList && !options.attributes && !options.characterData || options.attributeOldValue && !options.attributes || options.attributeFilter && options.attributeFilter.length && !options.attributes || options.characterDataOldValue && !options.characterData) {
-        throw new SyntaxError();
-      }
-      var registrations = registrationsTable.get(target);
-      if (!registrations) registrationsTable.set(target, registrations = []);
-      var registration;
-      for (var i = 0; i < registrations.length; i++) {
-        if (registrations[i].observer === this) {
-          registration = registrations[i];
-          registration.removeListeners();
-          registration.options = options;
-          break;
-        }
-      }
-      if (!registration) {
-        registration = new Registration(this, target, options);
-        registrations.push(registration);
-        this.nodes_.push(target);
-      }
-      registration.addListeners();
-    },
-    disconnect: function disconnect() {
-      this.nodes_.forEach(function (node) {
-        var registrations = registrationsTable.get(node);
-        for (var i = 0; i < registrations.length; i++) {
-          var registration = registrations[i];
-          if (registration.observer === this) {
-            registration.removeListeners();
-            registrations.splice(i, 1);
-            break;
-          }
-        }
-      }, this);
-      this.records_ = [];
-    },
-    takeRecords: function takeRecords() {
-      var copyOfRecords = this.records_;
-      this.records_ = [];
-      return copyOfRecords;
-    }
-  };
-  function MutationRecord(type, target) {
-    this.type = type;
-    this.target = target;
-    this.addedNodes = [];
-    this.removedNodes = [];
-    this.previousSibling = null;
-    this.nextSibling = null;
-    this.attributeName = null;
-    this.attributeNamespace = null;
-    this.oldValue = null;
-  }
-  function copyMutationRecord(original) {
-    var record = new MutationRecord(original.type, original.target);
-    record.addedNodes = original.addedNodes.slice();
-    record.removedNodes = original.removedNodes.slice();
-    record.previousSibling = original.previousSibling;
-    record.nextSibling = original.nextSibling;
-    record.attributeName = original.attributeName;
-    record.attributeNamespace = original.attributeNamespace;
-    record.oldValue = original.oldValue;
-    return record;
-  }
-  var currentRecord, recordWithOldValue;
-  function getRecord(type, target) {
-    return currentRecord = new MutationRecord(type, target);
-  }
-  function getRecordWithOldValue(oldValue) {
-    if (recordWithOldValue) return recordWithOldValue;
-    recordWithOldValue = copyMutationRecord(currentRecord);
-    recordWithOldValue.oldValue = oldValue;
-    return recordWithOldValue;
-  }
-  function clearRecords() {
-    currentRecord = recordWithOldValue = undefined;
-  }
-  function recordRepresentsCurrentMutation(record) {
-    return record === recordWithOldValue || record === currentRecord;
-  }
-  function selectRecord(lastRecord, newRecord) {
-    if (lastRecord === newRecord) return lastRecord;
-    if (recordWithOldValue && recordRepresentsCurrentMutation(lastRecord)) return recordWithOldValue;
-    return null;
-  }
-  function Registration(observer, target, options) {
-    this.observer = observer;
-    this.target = target;
-    this.options = options;
-    this.transientObservedNodes = [];
-  }
-  Registration.prototype = {
-    enqueue: function enqueue(record) {
-      var records = this.observer.records_;
-      var length = records.length;
-      if (records.length > 0) {
-        var lastRecord = records[length - 1];
-        var recordToReplaceLast = selectRecord(lastRecord, record);
-        if (recordToReplaceLast) {
-          records[length - 1] = recordToReplaceLast;
-          return;
-        }
-      } else {
-        scheduleCallback(this.observer);
-      }
-      records[length] = record;
-    },
-    addListeners: function addListeners() {
-      this.addListeners_(this.target);
-    },
-    addListeners_: function addListeners_(node) {
-      var options = this.options;
-      if (options.attributes) node.addEventListener("DOMAttrModified", this, true);
-      if (options.characterData) node.addEventListener("DOMCharacterDataModified", this, true);
-      if (options.childList) node.addEventListener("DOMNodeInserted", this, true);
-      if (options.childList || options.subtree) node.addEventListener("DOMNodeRemoved", this, true);
-    },
-    removeListeners: function removeListeners() {
-      this.removeListeners_(this.target);
-    },
-    removeListeners_: function removeListeners_(node) {
-      var options = this.options;
-      if (options.attributes) node.removeEventListener("DOMAttrModified", this, true);
-      if (options.characterData) node.removeEventListener("DOMCharacterDataModified", this, true);
-      if (options.childList) node.removeEventListener("DOMNodeInserted", this, true);
-      if (options.childList || options.subtree) node.removeEventListener("DOMNodeRemoved", this, true);
-    },
-    addTransientObserver: function addTransientObserver(node) {
-      if (node === this.target) return;
-      this.addListeners_(node);
-      this.transientObservedNodes.push(node);
-      var registrations = registrationsTable.get(node);
-      if (!registrations) registrationsTable.set(node, registrations = []);
-      registrations.push(this);
-    },
-    removeTransientObservers: function removeTransientObservers() {
-      var transientObservedNodes = this.transientObservedNodes;
-      this.transientObservedNodes = [];
-      transientObservedNodes.forEach(function (node) {
-        this.removeListeners_(node);
-        var registrations = registrationsTable.get(node);
-        for (var i = 0; i < registrations.length; i++) {
-          if (registrations[i] === this) {
-            registrations.splice(i, 1);
-            break;
-          }
-        }
-      }, this);
-    },
-    handleEvent: function handleEvent(e) {
-      e.stopImmediatePropagation();
-      switch (e.type) {
-        case "DOMAttrModified":
-          var name = e.attrName;
-          var namespace = e.relatedNode.namespaceURI;
-          var target = e.target;
-          var record = new getRecord("attributes", target);
-          record.attributeName = name;
-          record.attributeNamespace = namespace;
-          var oldValue = e.attrChange === MutationEvent.ADDITION ? null : e.prevValue;
-          forEachAncestorAndObserverEnqueueRecord(target, function (options) {
-            if (!options.attributes) return;
-            if (options.attributeFilter && options.attributeFilter.length && options.attributeFilter.indexOf(name) === -1 && options.attributeFilter.indexOf(namespace) === -1) {
-              return;
-            }
-            if (options.attributeOldValue) return getRecordWithOldValue(oldValue);
-            return record;
-          });
-          break;
-
-        case "DOMCharacterDataModified":
-          var target = e.target;
-          var record = getRecord("characterData", target);
-          var oldValue = e.prevValue;
-          forEachAncestorAndObserverEnqueueRecord(target, function (options) {
-            if (!options.characterData) return;
-            if (options.characterDataOldValue) return getRecordWithOldValue(oldValue);
-            return record;
-          });
-          break;
-
-        case "DOMNodeRemoved":
-          this.addTransientObserver(e.target);
-
-        case "DOMNodeInserted":
-          var changedNode = e.target;
-          var addedNodes, removedNodes;
-          if (e.type === "DOMNodeInserted") {
-            addedNodes = [changedNode];
-            removedNodes = [];
-          } else {
-            addedNodes = [];
-            removedNodes = [changedNode];
-          }
-          var previousSibling = changedNode.previousSibling;
-          var nextSibling = changedNode.nextSibling;
-          var record = getRecord("childList", e.target.parentNode);
-          record.addedNodes = addedNodes;
-          record.removedNodes = removedNodes;
-          record.previousSibling = previousSibling;
-          record.nextSibling = nextSibling;
-          forEachAncestorAndObserverEnqueueRecord(e.relatedNode, function (options) {
-            if (!options.childList) return;
-            return record;
-          });
-      }
-      clearRecords();
-    }
-  };
-  global.JsMutationObserver = JsMutationObserver;
-  if (!global.MutationObserver) {
-    global.MutationObserver = JsMutationObserver;
-    JsMutationObserver._isPolyfilled = true;
-  }
-})(self);
-
-var global$2 = typeof global !== "undefined" ? global :
+var global$1 = typeof global !== "undefined" ? global :
             typeof self !== "undefined" ? self :
             typeof window !== "undefined" ? window : {};
 
@@ -3045,10 +1625,10 @@ function defaultClearTimeout () {
 }
 var cachedSetTimeout = defaultSetTimout;
 var cachedClearTimeout = defaultClearTimeout;
-if (typeof global$2.setTimeout === 'function') {
+if (typeof global$1.setTimeout === 'function') {
     cachedSetTimeout = setTimeout;
 }
-if (typeof global$2.clearTimeout === 'function') {
+if (typeof global$1.clearTimeout === 'function') {
     cachedClearTimeout = clearTimeout;
 }
 
@@ -3394,8 +1974,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // the codes will be executed after the following polyfills are imported
 // because import statements are hoisted during compilation.
 // Polyfill ECMAScript standard features with global namespace pollution
+// import 'core-js/fn/object/set-prototype-of';
+//import 'core-js/fn/set';
+//import 'core-js/fn/map';
+
 // Polyfill Custom Elements v1 with global namespace pollution
 // Polyfill MutationObserver with global namespace pollution
+//import './MutationObserver@0.7.22/MutationObserver.js';
+
 // Polyfill setImmediate with global namespace pollution
 
 (function () {
@@ -4217,6 +2803,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	window.FastClick = FastClick;
 })();
 
+function createCommonjsModule(fn, module) {
+	return module = { exports: {} }, fn(module, module.exports), module.exports;
+}
+
 var microevent = createCommonjsModule(function (module) {
   /**
    * MicroEvent - to make any js object an event emitter (server or browser)
@@ -4592,34 +3182,6 @@ var possibleConstructorReturn = function (self, call) {
   }
 
   return call && (typeof call === "object" || typeof call === "function") ? call : self;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var toConsumableArray = function (arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-    return arr2;
-  } else {
-    return Array.from(arr);
-  }
 };
 
 /*
@@ -5306,7 +3868,7 @@ internal$1.templateStore = {
    * @param {String} key
    * @param {String} template
    */
-  set: function set(key, template) {
+  set: function set$$1(key, template) {
     internal$1.templateStore._storage[key] = template;
   }
 };
@@ -5725,619 +4287,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 */
+//import ToastQueue from './toast-queue';
+//import {LazyRepeatProvider, LazyRepeatDelegate} from './lazy-repeat';
 
-var ToastQueue = function () {
-  function ToastQueue() {
-    classCallCheck(this, ToastQueue);
-
-    this.queue = [];
-  }
-
-  createClass(ToastQueue, [{
-    key: "add",
-    value: function add(fn, promise) {
-      var _this = this;
-
-      this.queue.push(fn);
-
-      if (this.queue.length === 1) {
-        setImmediate(this.queue[0]);
-      }
-
-      promise.then(function () {
-        _this.queue.shift();
-
-        if (_this.queue.length > 0) {
-          setTimeout(_this.queue[0], 1000 / 30); // Apply some visual delay
-        }
-      });
-    }
-  }]);
-  return ToastQueue;
-}();
-
-var ToastQueue$1 = new ToastQueue();
-
-/*
-Copyright 2013-2015 ASIAL CORPORATION
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-*/
-
-var LazyRepeatDelegate = function () {
-  function LazyRepeatDelegate(userDelegate) {
-    var templateElement = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-    classCallCheck(this, LazyRepeatDelegate);
-
-    if ((typeof userDelegate === 'undefined' ? 'undefined' : _typeof(userDelegate)) !== 'object' || userDelegate === null) {
-      throw Error('"delegate" parameter must be an object.');
-    }
-    this._userDelegate = userDelegate;
-
-    if (!(templateElement instanceof Element) && templateElement !== null) {
-      throw Error('"templateElement" parameter must be an instance of Element or null.');
-    }
-    this._templateElement = templateElement;
-  }
-
-  createClass(LazyRepeatDelegate, [{
-    key: 'hasRenderFunction',
-
-
-    /**
-     * @return {Boolean}
-     */
-    value: function hasRenderFunction() {
-      return this._userDelegate._render instanceof Function;
-    }
-
-    /**
-     * @return {void}
-     */
-
-  }, {
-    key: '_render',
-    value: function _render() {
-      this._userDelegate._render.apply(this._userDelegate, arguments);
-    }
-
-    /**
-     * @param {Number} index
-     * @param {Function} done A function that take item object as parameter.
-     */
-
-  }, {
-    key: 'loadItemElement',
-    value: function loadItemElement(index, done) {
-      if (this._userDelegate.loadItemElement instanceof Function) {
-        this._userDelegate.loadItemElement(index, done);
-      } else {
-        var element = this._userDelegate.createItemContent(index, this._templateElement);
-        if (!(element instanceof Element)) {
-          throw Error('createItemContent() must return an instance of Element.');
-        }
-
-        done({ element: element });
-      }
-    }
-
-    /**
-     * @return {Number}
-     */
-
-  }, {
-    key: 'countItems',
-    value: function countItems() {
-      var count = this._userDelegate.countItems();
-      if (typeof count !== 'number') {
-        throw Error('countItems() must return a number.');
-      }
-      return count;
-    }
-
-    /**
-     * @param {Number} index
-     * @param {Object} item
-     * @param {Element} item.element
-     */
-
-  }, {
-    key: 'updateItem',
-    value: function updateItem(index, item) {
-      if (this._userDelegate.updateItemContent instanceof Function) {
-        this._userDelegate.updateItemContent(index, item);
-      }
-    }
-
-    /**
-     * @return {Number}
-     */
-
-  }, {
-    key: 'calculateItemHeight',
-    value: function calculateItemHeight(index) {
-      if (this._userDelegate.calculateItemHeight instanceof Function) {
-        var height = this._userDelegate.calculateItemHeight(index);
-
-        if (typeof height !== 'number') {
-          throw Error('calculateItemHeight() must return a number.');
-        }
-
-        return height;
-      }
-
-      return 0;
-    }
-
-    /**
-     * @param {Number} index
-     * @param {Object} item
-     */
-
-  }, {
-    key: 'destroyItem',
-    value: function destroyItem(index, item) {
-      if (this._userDelegate.destroyItem instanceof Function) {
-        this._userDelegate.destroyItem(index, item);
-      }
-    }
-
-    /**
-     * @return {void}
-     */
-
-  }, {
-    key: 'destroy',
-    value: function destroy() {
-      if (this._userDelegate.destroy instanceof Function) {
-        this._userDelegate.destroy();
-      }
-
-      this._userDelegate = this._templateElement = null;
-    }
-  }, {
-    key: 'itemHeight',
-    get: function get$$1() {
-      return this._userDelegate.itemHeight;
-    }
-  }]);
-  return LazyRepeatDelegate;
-}();
-
-/**
- * This class provide core functions for ons-lazy-repeat.
- */
-var LazyRepeatProvider = function () {
-
-  /**
-   * @param {Element} wrapperElement
-   * @param {LazyRepeatDelegate} delegate
-   */
-  function LazyRepeatProvider(wrapperElement, delegate) {
-    classCallCheck(this, LazyRepeatProvider);
-
-    if (!(delegate instanceof LazyRepeatDelegate)) {
-      throw Error('"delegate" parameter must be an instance of LazyRepeatDelegate.');
-    }
-
-    this._wrapperElement = wrapperElement;
-    this._delegate = delegate;
-    this._insertIndex = this._wrapperElement.children[0] && this._wrapperElement.children[0].tagName === 'ONS-LAZY-REPEAT' ? 1 : 0;
-
-    if (wrapperElement.tagName.toLowerCase() === 'ons-list') {
-      wrapperElement.classList.add('lazy-list');
-    }
-
-    this._pageContent = this._findPageContentElement(wrapperElement);
-
-    if (!this._pageContent) {
-      throw new Error('ons-lazy-repeat must be a descendant of an <ons-page> or an element.');
-    }
-
-    this.lastScrollTop = this._pageContent.scrollTop;
-    this.padding = 0;
-    this._topPositions = [0];
-    this._renderedItems = {};
-
-    if (!this._delegate.itemHeight && !this._delegate.calculateItemHeight(0)) {
-      this._unknownItemHeight = true;
-    }
-
-    this._addEventListeners();
-    this._onChange();
-  }
-
-  createClass(LazyRepeatProvider, [{
-    key: '_findPageContentElement',
-    value: function _findPageContentElement(wrapperElement) {
-      var pageContent = util.findParent(wrapperElement, '.page__content');
-
-      if (pageContent) {
-        return pageContent;
-      }
-
-      var page = util.findParent(wrapperElement, 'ons-page');
-      if (page) {
-        var content = util.findChild(page, '.content');
-        if (content) {
-          return content;
-        }
-      }
-
-      return null;
-    }
-  }, {
-    key: '_checkItemHeight',
-    value: function _checkItemHeight(callback) {
-      var _this = this;
-
-      this._delegate.loadItemElement(0, function (item) {
-        if (!_this._unknownItemHeight) {
-          throw Error('Invalid state');
-        }
-
-        _this._wrapperElement.appendChild(item.element);
-
-        var done = function done() {
-          _this._delegate.destroyItem(0, item);
-          _this._wrapperElement.removeChild(item.element);
-          delete _this._unknownItemHeight;
-          callback();
-        };
-
-        _this._itemHeight = item.element.offsetHeight;
-
-        if (_this._itemHeight > 0) {
-          done();
-          return;
-        }
-
-        // retry to measure offset height
-        // dirty fix for angular2 directive
-        var lastVisibility = _this._wrapperElement.style.visibility;
-        _this._wrapperElement.style.visibility = 'hidden';
-        item.element.style.visibility = 'hidden';
-
-        setImmediate(function () {
-          _this._itemHeight = item.element.offsetHeight;
-          if (_this._itemHeight == 0) {
-            throw Error('Invalid state: this._itemHeight must be greater than zero.');
-          }
-          _this._wrapperElement.style.visibility = lastVisibility;
-          done();
-        });
-      });
-    }
-  }, {
-    key: '_countItems',
-    value: function _countItems() {
-      return this._delegate.countItems();
-    }
-  }, {
-    key: '_getItemHeight',
-    value: function _getItemHeight(i) {
-      // Item is rendered
-      if (this._renderedItems.hasOwnProperty(i)) {
-        if (!this._renderedItems[i].hasOwnProperty('height')) {
-          this._renderedItems[i].height = this._renderedItems[i].element.offsetHeight;
-        }
-        return this._renderedItems[i].height;
-      }
-
-      // Item is not rendered, scroll up
-      if (this._topPositions[i + 1] && this._topPositions[i]) {
-        return this._topPositions[i + 1] - this._topPositions[i];
-      }
-      // Item is not rendered, scroll down
-      return this.staticItemHeight || this._delegate.calculateItemHeight(i);
-    }
-  }, {
-    key: '_calculateRenderedHeight',
-    value: function _calculateRenderedHeight() {
-      var _this2 = this;
-
-      return Object.keys(this._renderedItems).reduce(function (a, b) {
-        return a + _this2._getItemHeight(+b);
-      }, 0);
-    }
-  }, {
-    key: '_onChange',
-    value: function _onChange() {
-      this._render();
-    }
-  }, {
-    key: '_lastItemRendered',
-    value: function _lastItemRendered() {
-      return Math.max.apply(Math, toConsumableArray(Object.keys(this._renderedItems)));
-    }
-  }, {
-    key: '_firstItemRendered',
-    value: function _firstItemRendered() {
-      return Math.min.apply(Math, toConsumableArray(Object.keys(this._renderedItems)));
-    }
-  }, {
-    key: 'refresh',
-    value: function refresh() {
-      var lastItemIndex = Math.min(this._lastItemRendered(), this._countItems() - 1);
-      var firstItemIndex = this._firstItemRendered();
-      this._wrapperElement.style.height = this._topPositions[firstItemIndex] + this._calculateRenderedHeight() + 'px';
-      this.padding = this._topPositions[firstItemIndex];
-      this._removeAllElements();
-      this._render({ forceScrollDown: true, forceFirstIndex: firstItemIndex, forceLastIndex: lastItemIndex });
-      this._wrapperElement.style.height = 'inherit';
-    }
-  }, {
-    key: '_render',
-    value: function _render() {
-      var _this3 = this;
-
-      var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          _ref$forceScrollDown = _ref.forceScrollDown,
-          forceScrollDown = _ref$forceScrollDown === undefined ? false : _ref$forceScrollDown,
-          forceFirstIndex = _ref.forceFirstIndex,
-          forceLastIndex = _ref.forceLastIndex;
-
-      if (this._unknownItemHeight) {
-        return this._checkItemHeight(this._render.bind(this, arguments[0]));
-      }
-
-      var isScrollUp = !forceScrollDown && this.lastScrollTop > this._pageContent.scrollTop;
-      this.lastScrollTop = this._pageContent.scrollTop;
-      var keep = {};
-
-      var offset = this._wrapperElement.getBoundingClientRect().top;
-      var limit = 4 * window.innerHeight - offset;
-      var count = this._countItems();
-
-      var start = forceFirstIndex || Math.max(0, this._calculateStartIndex(offset) - 30);
-      var i = start;
-
-      for (var top = this._topPositions[i]; i < count && top < limit; i++) {
-        if (i >= this._topPositions.length) {
-          // perf optimization
-          this._topPositions.length += 100;
-        }
-
-        this._topPositions[i] = top;
-        top += this._getItemHeight(i);
-      }
-
-      if (this._delegate.hasRenderFunction && this._delegate.hasRenderFunction()) {
-        return this._delegate._render(start, i, function () {
-          _this3.padding = _this3._topPositions[start];
-        });
-      }
-
-      if (isScrollUp) {
-        for (var j = i - 1; j >= start; j--) {
-          keep[j] = true;
-          this._renderElement(j, isScrollUp);
-        }
-      } else {
-        var lastIndex = forceLastIndex || Math.max.apply(Math, [i - 1].concat(toConsumableArray(Object.keys(this._renderedItems))));
-        for (var _j = start; _j <= lastIndex; _j++) {
-          keep[_j] = true;
-          this._renderElement(_j, isScrollUp);
-        }
-      }
-
-      Object.keys(this._renderedItems).forEach(function (key) {
-        return keep[key] || _this3._removeElement(key, isScrollUp);
-      });
-    }
-
-    /**
-     * @param {Number} index
-     * @param {Boolean} isScrollUp
-     */
-
-  }, {
-    key: '_renderElement',
-    value: function _renderElement(index, isScrollUp) {
-      var _this4 = this;
-
-      var item = this._renderedItems[index];
-      if (item) {
-        this._delegate.updateItem(index, item); // update if it exists
-        return;
-      }
-
-      this._delegate.loadItemElement(index, function (item) {
-        if (isScrollUp) {
-          _this4._wrapperElement.insertBefore(item.element, _this4._wrapperElement.children[_this4._insertIndex]);
-          _this4.padding = _this4._topPositions[index];
-          item.height = _this4._topPositions[index + 1] - _this4._topPositions[index];
-        } else {
-          _this4._wrapperElement.appendChild(item.element);
-        }
-
-        _this4._renderedItems[index] = item;
-      });
-    }
-
-    /**
-     * @param {Number} index
-     * @param {Boolean} isScrollUp
-     */
-
-  }, {
-    key: '_removeElement',
-    value: function _removeElement(index) {
-      var isScrollUp = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
-      index = +index;
-      var item = this._renderedItems[index];
-      this._delegate.destroyItem(index, item);
-
-      if (isScrollUp) {
-        this._topPositions[index + 1] = undefined;
-      } else {
-        this.padding = this.padding + this._getItemHeight(index);
-      }
-
-      if (item.element.parentElement) {
-        item.element.parentElement.removeChild(item.element);
-      }
-
-      delete this._renderedItems[index];
-    }
-  }, {
-    key: '_removeAllElements',
-    value: function _removeAllElements() {
-      var _this5 = this;
-
-      Object.keys(this._renderedItems).forEach(function (key) {
-        return _this5._removeElement(key);
-      });
-    }
-  }, {
-    key: '_recalculateTopPositions',
-    value: function _recalculateTopPositions(start, end) {
-      for (var i = start; i <= end; i++) {
-        this._topPositions[i + 1] = this._topPositions[i] + this._getItemHeight(i);
-      }
-    }
-  }, {
-    key: '_calculateStartIndex',
-    value: function _calculateStartIndex(current) {
-      var firstItemIndex = this._firstItemRendered();
-      var lastItemIndex = this._lastItemRendered();
-
-      // Fix for Safari scroll and Angular 2
-      this._recalculateTopPositions(firstItemIndex, lastItemIndex);
-
-      var start = 0;
-      var end = this._countItems() - 1;
-
-      // Binary search for index at top of screen so we can speed up rendering.
-      for (;;) {
-        var middle = Math.floor((start + end) / 2);
-        var value = current + this._topPositions[middle];
-
-        if (end < start) {
-          return 0;
-        } else if (value <= 0 && value + this._getItemHeight(middle) > 0) {
-          return middle;
-        } else if (isNaN(value) || value >= 0) {
-          end = middle - 1;
-        } else {
-          start = middle + 1;
-        }
-      }
-    }
-  }, {
-    key: '_debounce',
-    value: function _debounce(func, wait, immediate) {
-      var timeout = void 0;
-      return function () {
-        var _this6 = this,
-            _arguments = arguments;
-
-        var callNow = immediate && !timeout;
-        clearTimeout(timeout);
-        if (callNow) {
-          func.apply(this, arguments);
-        } else {
-          timeout = setTimeout(function () {
-            timeout = null;
-            func.apply(_this6, _arguments);
-          }, wait);
-        }
-      };
-    }
-  }, {
-    key: '_doubleFireOnTouchend',
-    value: function _doubleFireOnTouchend() {
-      this._render();
-      this._debounce(this._render.bind(this), 100);
-    }
-  }, {
-    key: '_addEventListeners',
-    value: function _addEventListeners() {
-      util.bindListeners(this, ['_onChange', '_doubleFireOnTouchend']);
-
-      if (platform$1.isIOS()) {
-        this._boundOnChange = this._debounce(this._boundOnChange, 30);
-      }
-
-      this._pageContent.addEventListener('scroll', this._boundOnChange, true);
-
-      if (platform$1.isIOS()) {
-        this._pageContent.addEventListener('touchmove', this._boundOnChange, true);
-        this._pageContent.addEventListener('touchend', this._boundDoubleFireOnTouchend, true);
-      }
-
-      window.document.addEventListener('resize', this._boundOnChange, true);
-    }
-  }, {
-    key: '_removeEventListeners',
-    value: function _removeEventListeners() {
-      this._pageContent.removeEventListener('scroll', this._boundOnChange, true);
-
-      if (platform$1.isIOS()) {
-        this._pageContent.removeEventListener('touchmove', this._boundOnChange, true);
-        this._pageContent.removeEventListener('touchend', this._boundDoubleFireOnTouchend, true);
-      }
-
-      window.document.removeEventListener('resize', this._boundOnChange, true);
-    }
-  }, {
-    key: 'destroy',
-    value: function destroy() {
-      this._removeAllElements();
-      this._delegate.destroy();
-      this._parentElement = this._delegate = this._renderedItems = null;
-      this._removeEventListeners();
-    }
-  }, {
-    key: 'padding',
-    get: function get$$1() {
-      return parseInt(this._wrapperElement.style.paddingTop, 10);
-    },
-    set: function set(newValue) {
-      this._wrapperElement.style.paddingTop = newValue + 'px';
-    }
-  }, {
-    key: 'staticItemHeight',
-    get: function get$$1() {
-      return this._delegate.itemHeight || this._itemHeight;
-    }
-  }]);
-  return LazyRepeatProvider;
-}();
-
-/*
-Copyright 2013-2015 ASIAL CORPORATION
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-*/
 internal$1.AnimatorFactory = AnimatorFactory;
 internal$1.ModifierUtil = ModifierUtil;
-internal$1.ToastQueue = ToastQueue$1;
-internal$1.LazyRepeatProvider = LazyRepeatProvider;
-internal$1.LazyRepeatDelegate = LazyRepeatDelegate;
 
 /*
 Copyright 2013-2015 ASIAL CORPORATION
@@ -9803,558 +7757,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 */
-var readyMap = new WeakMap();
-var queueMap = new WeakMap();
-
-function isContentReady(element) {
-  if (element.childNodes.length > 0) {
-    setContentReady(element);
-  }
-  return readyMap.has(element);
-}
-
-function setContentReady(element) {
-  readyMap.set(element, true);
-}
-
-function addCallback(element, fn) {
-  if (!queueMap.has(element)) {
-    queueMap.set(element, []);
-  }
-  queueMap.get(element).push(fn);
-}
-
-function consumeQueue(element) {
-  var callbacks = queueMap.get(element, []) || [];
-  queueMap.delete(element);
-  callbacks.forEach(function (callback) {
-    return callback();
-  });
-}
-
-function contentReady(element) {
-  var fn = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
-
-  addCallback(element, fn);
-
-  if (isContentReady(element)) {
-    consumeQueue(element);
-    return;
-  }
-
-  var observer = new MutationObserver(function (changes) {
-    setContentReady(element);
-    consumeQueue(element);
-  });
-  observer.observe(element, { childList: true, characterData: true });
-
-  // failback for elements has empty content.
-  setImmediate(function () {
-    setContentReady(element);
-    consumeQueue(element);
-  });
-}
-
-/*
-Copyright 2013-2015 ASIAL CORPORATION
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-*/
-
-var _setAttributes = function _setAttributes(element, options) {
-  ['id', 'class', 'animation'].forEach(function (a) {
-    return options.hasOwnProperty(a) && element.setAttribute(a, options[a]);
-  });
-
-  if (options.modifier) {
-    util.addModifier(element, options.modifier);
-  }
-};
-
-/**
- * @object ons.notification
- * @category dialog
- * @tutorial vanilla/Reference/dialog
- * @description
- *   [en]
- *     Utility methods to create different kinds of notifications. There are three methods available:
- *
- *     * `ons.notification.alert()`
- *     * `ons.notification.confirm()`
- *     * `ons.notification.prompt()`
- *     * `ons.notification.toast()`
- *
- *     It will automatically display a Material Design dialog on Android devices.
- *   [/en]
- *   [ja]いくつかの種類のアラートダイアログを作成するためのユーティリティメソッドを収めたオブジェクトです。[/ja]
- * @example
- * ons.notification.alert('Hello, world!');
- *
- * ons.notification.confirm('Are you ready?')
- *   .then(
- *     function(answer) {
- *       if (answer === 1) {
- *         ons.notification.alert('Let\'s go!');
- *       }
- *     }
- *   );
- *
- * ons.notification.prompt('How old are ?')
- *   .then(
- *     function(age) {
- *       ons.notification.alert('You are ' + age + ' years old.');
- *     }
- *   );
- */
-var notification = {};
-
-notification._createAlertDialog = function (options) {
-  // Prompt input string
-  var inputString = '';
-  if (options.isPrompt) {
-    inputString = '\n      <input\n        class="text-input text-input--underbar"\n        type="' + (options.inputType || 'text') + '"\n        placeholder="' + (options.placeholder || '') + '"\n        value="' + (options.defaultValue || '') + '"\n        style="width: 100%; margin-top: 10px;"\n      />\n    ';
-  }
-
-  // Buttons string
-  var buttons = '';
-  options.buttonLabels.forEach(function (label, index) {
-    buttons += '\n      <ons-alert-dialog-button\n        class="\n          ' + (index === options.primaryButtonIndex ? ' alert-dialog-button--primal' : '') + '\n          ' + (options.buttonLabels.length <= 2 ? ' alert-dialog-button--rowfooter' : '') + '\n        " \n        style="position: relative;">\n        ' + label + '\n      </ons-alert-dialog-button>\n    ';
-  });
-
-  // Dialog Element
-  var el = {};
-  var _destroyDialog = function _destroyDialog() {
-    if (el.dialog.onDialogCancel) {
-      el.dialog.removeEventListener('dialog-cancel', el.dialog.onDialogCancel);
-    }
-
-    Object.keys(el).forEach(function (key) {
-      return delete el[key];
-    });
-    el = null;
-
-    if (options.destroy instanceof Function) {
-      options.destroy();
-    }
-  };
-
-  el.dialog = document.createElement('ons-alert-dialog');
-  el.dialog.innerHTML = '\n    <div class="alert-dialog-mask"></div>\n    <div class="alert-dialog">\n      <div class="alert-dialog-container">\n        <div class="alert-dialog-title">\n          ' + (options.title || '') + '\n        </div>\n        <div class="alert-dialog-content">\n          ' + (options.message || options.messageHTML) + '\n          ' + inputString + '\n        </div>\n        <div class="\n          alert-dialog-footer\n          ' + (options.buttonLabels.length <= 2 ? ' alert-dialog-footer--rowfooter' : '') + '\n        ">\n          ' + buttons + '\n        </div>\n      </div>\n    </div>\n  ';
-  contentReady(el.dialog);
-
-  // Set attributes
-  _setAttributes(el.dialog, options);
-
-  var deferred = util.defer();
-
-  // Prompt events
-  if (options.isPrompt && options.submitOnEnter) {
-    el.input = el.dialog.querySelector('.text-input');
-    el.input.onkeypress = function (event) {
-      if (event.keyCode === 13) {
-        el.dialog.hide().then(function () {
-          if (el) {
-            var resolveValue = el.input.value;
-            _destroyDialog();
-            options.callback(resolveValue);
-            deferred.resolve(resolveValue);
-          }
-        });
-      }
-    };
-  }
-
-  // Button events
-  el.footer = el.dialog.querySelector('.alert-dialog-footer');
-  util.arrayFrom(el.dialog.querySelectorAll('.alert-dialog-button')).forEach(function (buttonElement, index) {
-    buttonElement.onclick = function () {
-      el.dialog.hide().then(function () {
-        if (el) {
-          var resolveValue = index;
-          if (options.isPrompt) {
-            resolveValue = index === options.primaryButtonIndex ? el.input.value : null;
-          }
-          el.dialog.remove();
-          _destroyDialog();
-          options.callback(resolveValue);
-          deferred.resolve(resolveValue);
-        }
-      });
-    };
-
-    el.footer.appendChild(buttonElement);
-  });
-
-  // Cancel events
-  if (options.cancelable) {
-    el.dialog.cancelable = true;
-    el.dialog.onDialogCancel = function () {
-      setImmediate(function () {
-        el.dialog.remove();
-        _destroyDialog();
-      });
-      var resolveValue = options.isPrompt ? null : -1;
-      options.callback(resolveValue);
-      deferred.resolve(resolveValue);
-    };
-    el.dialog.addEventListener('dialog-cancel', el.dialog.onDialogCancel, false);
-  }
-
-  // Show dialog
-  document.body.appendChild(el.dialog);
-  options.compile(el.dialog);
-  setImmediate(function () {
-    el.dialog.show().then(function () {
-      if (el.input && options.isPrompt && options.autofocus) {
-        el.input.focus();
-      }
-    });
-  });
-
-  return deferred.promise;
-};
-
-var _normalizeArguments = function _normalizeArguments(message) {
-  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var defaults$$1 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
-  options = _extends({}, options);
-  typeof message === 'string' ? options.message = message : options = message;
-  if (!options.message && !options.messageHTML) {
-    throw new Error('Notifications must contain a message.');
-  }
-
-  if (options.hasOwnProperty('buttonLabels') || options.hasOwnProperty('buttonLabel')) {
-    options.buttonLabels = options.buttonLabels || options.buttonLabel;
-    if (!Array.isArray(options.buttonLabels)) {
-      options.buttonLabels = [options.buttonLabels || ''];
-    }
-  }
-
-  return util.extend({
-    compile: function compile(param) {
-      return param;
-    },
-    callback: function callback(param) {
-      return param;
-    },
-    animation: 'default',
-    cancelable: false,
-    primaryButtonIndex: (options.buttonLabels || defaults$$1.buttonLabels || []).length - 1
-  }, defaults$$1, options);
-};
-
-/**
- * @method alert
- * @signature alert(message [, options] | options)
- * @return {Promise}
- *   [en]Will resolve to the index of the button that was pressed or `-1` when canceled.[/en]
- *   [ja][/ja]
- * @param {String} message
- *   [en]Notification message. This argument is optional but if it's not defined either `options.message` or `options.messageHTML` must be defined instead.[/en]
- *   [ja][/ja]
- * @param {Object} options
- *   [en]Parameter object.[/en]
- *   [ja]オプションを指定するオブジェクトです。[/ja]
- * @param {String} [options.message]
- *   [en]Notification message.[/en]
- *   [ja]アラートダイアログに表示する文字列を指定します。[/ja]
- * @param {String} [options.messageHTML]
- *   [en]Notification message in HTML.[/en]
- *   [ja]アラートダイアログに表示するHTMLを指定します。[/ja]
- * @param {String | Array} [options.buttonLabels]
- *   [en]Labels for the buttons. Default is `"OK"`.[/en]
- *   [ja]確認ボタンのラベルを指定します。"OK"がデフォルトです。[/ja]
- * @param {Number} [options.primaryButtonIndex]
- *   [en]Index of primary button. Default is the last one.[/en]
- *   [ja]プライマリボタンのインデックスを指定します。デフォルトは 0 です。[/ja]
- * @param {Boolean} [options.cancelable]
- *   [en]Whether the dialog is cancelable or not. Default is `false`. If the dialog is cancelable it can be closed by clicking the background or pressing the Android back button.[/en]
- *   [ja]ダイアログがキャンセル可能かどうかを指定します。[/ja]
- * @param {String} [options.animation]
- *   [en]Animation name. Available animations are `none` and `fade`. Default is `fade`.[/en]
- *   [ja]アラートダイアログを表示する際のアニメーション名を指定します。"none", "fade"のいずれかを指定できます。[/ja]
- * @param {String} [options.id]
- *   [en]The `<ons-alert-dialog>` element's ID.[/en]
- *   [ja]ons-alert-dialog要素のID。[/ja]
- * @param {String} [options.class]
- *   [en]The `<ons-alert-dialog>` element's class.[/en]
- *   [ja]ons-alert-dialog要素のclass。[/ja]
- * @param {String} [options.title]
- *   [en]Dialog title. Default is `"Alert"`.[/en]
- *   [ja]アラートダイアログの上部に表示するタイトルを指定します。"Alert"がデフォルトです。[/ja]
- * @param {String} [options.modifier]
- *   [en]Modifier for the dialog.[/en]
- *   [ja]アラートダイアログのmodifier属性の値を指定します。[/ja]
- * @param {Function} [options.callback]
- *   [en]Function that executes after dialog has been closed.[/en]
- *   [ja]アラートダイアログが閉じられた時に呼び出される関数オブジェクトを指定します。[/ja]
- * @description
- *   [en]
- *     Display an alert dialog to show the user a message.
- *
- *     The content of the message can be either simple text or HTML.
- *
- *     It can be called in the following ways:
- *
- *     ```
- *     ons.notification.alert(message, options);
- *     ons.notification.alert(options);
- *     ```
- *
- *     Must specify either `message` or `messageHTML`.
- *   [/en]
- *   [ja]
- *     ユーザーへメッセージを見せるためのアラートダイアログを表示します。
- *     表示するメッセージは、テキストかもしくはHTMLを指定できます。
- *     このメソッドの引数には、options.messageもしくはoptions.messageHTMLのどちらかを必ず指定する必要があります。
- *   [/ja]
- */
-notification.alert = function (message, options) {
-  options = _normalizeArguments(message, options, {
-    buttonLabels: ['OK'],
-    title: 'Alert'
-  });
-
-  return notification._createAlertDialog(options);
-};
-
-/**
- * @method confirm
- * @signature confirm(message [, options] | options)
- * @return {Promise}
- *   [en]Will resolve to the index of the button that was pressed or `-1` when canceled.[/en]
- *   [ja][/ja]
- * @param {String} message
- *   [en]Notification message. This argument is optional but if it's not defined either `options.message` or `options.messageHTML` must be defined instead.[/en]
- *   [ja][/ja]
- * @param {Object} options
- *   [en]Parameter object.[/en]
- * @param {Array} [options.buttonLabels]
- *   [en]Labels for the buttons. Default is `["Cancel", "OK"]`.[/en]
- *   [ja]ボタンのラベルの配列を指定します。["Cancel", "OK"]がデフォルトです。[/ja]
- * @param {Number} [options.primaryButtonIndex]
- *   [en]Index of primary button. Default is the last one.[/en]
- *   [ja]プライマリボタンのインデックスを指定します。デフォルトは 1 です。[/ja]
- * @description
- *   [en]
- *     Display a dialog to ask the user for confirmation. Extends `alert()` parameters.
- *     The default button labels are `"Cancel"` and `"OK"` but they can be customized.
- *
- *     It can be called in the following ways:
- *
- *     ```
- *     ons.notification.confirm(message, options);
- *     ons.notification.confirm(options);
- *     ```
- *
- *     Must specify either `message` or `messageHTML`.
- *   [/en]
- *   [ja]
- *     ユーザに確認を促すダイアログを表示します。
- *     デオルとのボタンラベルは、"Cancel"と"OK"ですが、これはこのメソッドの引数でカスタマイズできます。
- *     このメソッドの引数には、options.messageもしくはoptions.messageHTMLのどちらかを必ず指定する必要があります。
- *   [/ja]
- */
-notification.confirm = function (message, options) {
-  options = _normalizeArguments(message, options, {
-    buttonLabels: ['Cancel', 'OK'],
-    title: 'Confirm'
-  });
-
-  return notification._createAlertDialog(options);
-};
-
-/**
- * @method prompt
- * @signature prompt(message [, options] | options)
- * @param {String} message
- *   [en]Notification message. This argument is optional but if it's not defined either `options.message` or `options.messageHTML` must be defined instead.[/en]
- *   [ja][/ja]
- * @return {Promise}
- *   [en]Will resolve to the input value when the dialog is closed or `null` when canceled.[/en]
- *   [ja][/ja]
- * @param {Object} options
- *   [en]Parameter object.[/en]
- *   [ja]オプションを指定するオブジェクトです。[/ja]
- * @param {String | Array} [options.buttonLabels]
- *   [en]Labels for the buttons. Default is `"OK"`.[/en]
- *   [ja]確認ボタンのラベルを指定します。"OK"がデフォルトです。[/ja]
- * @param {Number} [options.primaryButtonIndex]
- *   [en]Index of primary button. Default is the last one.[/en]
- *   [ja]プライマリボタンのインデックスを指定します。デフォルトは 0 です。[/ja]
- * @param {String} [options.placeholder]
- *   [en]Placeholder for the text input.[/en]
- *   [ja]テキスト欄のプレースホルダに表示するテキストを指定します。[/ja]
- * @param {String} [options.defaultValue]
- *   [en]Default value for the text input.[/en]
- *   [ja]テキスト欄のデフォルトの値を指定します。[/ja]
- * @param {String} [options.inputType]
- *   [en]Type of the input element (`password`, `date`...). Default is `text`.[/en]
- *   [ja][/ja]
- * @param {Boolean} [options.autofocus]
- *   [en]Autofocus the input element. Default is `true`.[/en]
- *   [ja]input要素に自動的にフォーカスするかどうかを指定します。デフォルトはtrueです。[/ja]
- * @param {Boolean} [options.submitOnEnter]
- *   [en]Submit automatically when enter is pressed. Default is `true`.[/en]
- *   [ja]Enterが押された際にそのformをsubmitするかどうかを指定します。デフォルトはtrueです。[/ja]
- * @description
- *   [en]
- *     Display a dialog with a prompt to ask the user a question. Extends `alert()` parameters.
- *
- *     It can be called in the following ways:
- *
- *     ```
- *     ons.notification.prompt(message, options);
- *     ons.notification.prompt(options);
- *     ```
- *
- *     Must specify either `message` or `messageHTML`.
- *   [/en]
- *   [ja]
- *     ユーザーに入力を促すダイアログを表示します。
- *     このメソッドの引数には、options.messageもしくはoptions.messageHTMLのどちらかを必ず指定する必要があります。
- *   [/ja]
- */
-notification.prompt = function (message, options) {
-  options = _normalizeArguments(message, options, {
-    buttonLabels: ['OK'],
-    title: 'Alert',
-    isPrompt: true,
-    autofocus: true,
-    submitOnEnter: true
-  });
-
-  return notification._createAlertDialog(options);
-};
-
-/**
- * @method toast
- * @signature toast(message [, options] | options)
- * @return {Promise}
- *   [en]Will resolve when the toast is hidden.[/en]
- *   [ja][/ja]
- * @param {String} message
- *   [en]Toast message. This argument is optional but if it's not defined then `options.message` must be defined instead.[/en]
- *   [ja][/ja]
- * @param {Object} options
- *   [en]Parameter object.[/en]
- *   [ja]オプションを指定するオブジェクトです。[/ja]
- * @param {String} [options.message]
- *   [en]Notification message.[/en]
- *   [ja]トーストに表示する文字列を指定します。[/ja]
- * @param {String} [options.buttonLabel]
- *   [en]Label for the button.[/en]
- *   [ja]確認ボタンのラベルを指定します。[/ja]
- * @param {String} [options.animation]
- *   [en]Animation name. Available animations are `none`, `fade`, `ascend`, `lift` and `fall`. Default is `ascend` for Android and `lift` for iOS.[/en]
- *   [ja]トーストを表示する際のアニメーション名を指定します。"none", "fade", "ascend", "lift", "fall"のいずれかを指定できます。[/ja]
- * @param {Number} [options.timeout]
- *   [en]Number of miliseconds where the toast is visible before hiding automatically.[/en]
- *   [ja][/ja]
- * @param {Boolean} [options.force]
- *   [en]If `true`, the toast skips the notification queue and is shown immediately. Defaults to `false`.[/en]
- *   [ja][/ja]
- * @param {String} [options.id]
- *   [en]The `<ons-toast>` element's ID.[/en]
- *   [ja]ons-toast要素のID。[/ja]
- * @param {String} [options.class]
- *   [en]The `<ons-toast>` element's class.[/en]
- *   [ja]ons-toast要素のclass。[/ja]
- * @param {String} [options.modifier]
- *   [en]Modifier for the element.[/en]
- *   [ja]トーストのmodifier属性の値を指定します。[/ja]
- * @param {Function} [options.callback]
- *   [en]Function that executes after toast has been hidden.[/en]
- *   [ja]トーストが閉じられた時に呼び出される関数オブジェクトを指定します。[/ja]
- * @description
- *   [en]
- *     Display a simple notification toast with an optional button that can be used for simple actions.
- *
- *     It can be called in the following ways:
- *
- *     ```
- *     ons.notification.toast(message, options);
- *     ons.notification.toast(options);
- *     ```
- *   [/en]
- *   [ja][/ja]
- */
-notification.toast = function (message, options) {
-  options = _normalizeArguments(message, options, {
-    timeout: 0,
-    force: false
-  });
-
-  var toast = util.createElement('\n    <ons-toast>\n      ' + options.message + '\n      ' + (options.buttonLabels ? '<button>' + options.buttonLabels[0] + '</button>' : '') + '\n    </ons-toast>\n  ');
-
-  _setAttributes(toast, options);
-
-  var deferred = util.defer();
-  var resolve = function resolve(value) {
-    if (toast) {
-      toast.hide().then(function () {
-        if (toast) {
-          toast.remove();
-          toast = null;
-          options.callback(value);
-          deferred.resolve(value);
-        }
-      });
-    }
-  };
-
-  if (options.buttonLabels) {
-    util.findChild(toast._toast, 'button').onclick = function () {
-      return resolve(0);
-    };
-  }
-
-  document.body.appendChild(toast);
-  options.compile(toast);
-
-  var show = function show() {
-    toast.parentElement && toast.show(options).then(function () {
-      if (options.timeout) {
-        setTimeout(function () {
-          return resolve(-1);
-        }, options.timeout);
-      }
-    });
-  };
-
-  options.force ? show() : ToastQueue$1.add(show, deferred.promise);
-
-  return deferred.promise;
-};
-
-/*
-Copyright 2013-2015 ASIAL CORPORATION
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-*/
 
 // Validate parameters
 var checkOptions = function checkOptions(options) {
@@ -10452,7 +7854,7 @@ limitations under the License.
 
 */
 
-var create$1 = function create() {
+var create = function create() {
 
   /**
    * @object ons.orientation
@@ -10622,7 +8024,7 @@ var create$1 = function create() {
   return obj;
 };
 
-var orientation = create$1()._init();
+var orientation = create()._init();
 
 /*
 Copyright 2013-2015 ASIAL CORPORATION
@@ -10875,7 +8277,7 @@ var HandlerRepository = {
     };
   }(),
 
-  set: function set(element, handler) {
+  set: function set$$1(element, handler) {
     if (element.dataset.deviceBackButtonHandlerId) {
       this.remove(element);
     }
@@ -11269,6 +8671,74 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 */
+var readyMap = new WeakMap();
+var queueMap = new WeakMap();
+
+function isContentReady(element) {
+  if (element.childNodes.length > 0) {
+    setContentReady(element);
+  }
+  return readyMap.has(element);
+}
+
+function setContentReady(element) {
+  readyMap.set(element, true);
+}
+
+function addCallback(element, fn) {
+  if (!queueMap.has(element)) {
+    queueMap.set(element, []);
+  }
+  queueMap.get(element).push(fn);
+}
+
+function consumeQueue(element) {
+  var callbacks = queueMap.get(element, []) || [];
+  queueMap.delete(element);
+  callbacks.forEach(function (callback) {
+    return callback();
+  });
+}
+
+function contentReady(element) {
+  var fn = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
+
+  addCallback(element, fn);
+
+  if (isContentReady(element)) {
+    consumeQueue(element);
+    return;
+  }
+
+  var observer = new MutationObserver(function (changes) {
+    setContentReady(element);
+    consumeQueue(element);
+  });
+  observer.observe(element, { childList: true, characterData: true });
+
+  // failback for elements has empty content.
+  setImmediate(function () {
+    setContentReady(element);
+    consumeQueue(element);
+  });
+}
+
+/*
+Copyright 2013-2015 ASIAL CORPORATION
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+*/
 // Default implementation for global PageLoader.
 function loadPage(_ref, done) {
   var page = _ref.page,
@@ -11341,7 +8811,7 @@ var PageLoader = function () {
     }
   }, {
     key: 'internalLoader',
-    set: function set(fn) {
+    set: function set$$1(fn) {
       if (!(fn instanceof Function)) {
         throw Error('First parameter must be an instance of Function');
       }
@@ -11435,6 +8905,7 @@ limitations under the License.
 
 */
 
+//import notification from './notification';
 /**
  * @object ons
  * @category util
@@ -11453,7 +8924,7 @@ ons$1.platform = platform$1;
 ons$1.softwareKeyboard = softwareKeyboard;
 ons$1.pageAttributeExpression = pageAttributeExpression;
 ons$1.orientation = orientation;
-ons$1.notification = notification;
+//ons.notification = notification;
 ons$1.modifier = modifier;
 ons$1._animationOptionsParser = parse;
 ons$1._autoStyle = autoStyle;
@@ -12071,7 +9542,7 @@ var ButtonElement = function (_BaseElement) {
     }
   }, {
     key: 'disabled',
-    set: function set(value) {
+    set: function set$$1(value) {
       return util.toggleAttribute(this, 'disabled', value);
     },
     get: function get$$1() {
@@ -13406,7 +10877,7 @@ var PageElement = function (_BaseElement) {
           get: function get$$1() {
             return _this7['_' + key];
           },
-          set: function set(value) {
+          set: function set$$1(value) {
             if (!(value instanceof Function)) {
               throw new Error(key + ' hook must be a function');
             }
@@ -13417,7 +10888,7 @@ var PageElement = function (_BaseElement) {
     }
   }, {
     key: 'name',
-    set: function set(str) {
+    set: function set$$1(str) {
       this.setAttribute('name', str);
     },
     get: function get$$1() {
@@ -13430,7 +10901,7 @@ var PageElement = function (_BaseElement) {
     }
   }, {
     key: 'onInfiniteScroll',
-    set: function set(value) {
+    set: function set$$1(value) {
       var _this8 = this;
 
       if (value === null) {
@@ -13458,7 +10929,7 @@ var PageElement = function (_BaseElement) {
     get: function get$$1() {
       return this._backButtonHandler;
     },
-    set: function set(callback) {
+    set: function set$$1(callback) {
       if (this._backButtonHandler) {
         this._backButtonHandler.destroy();
       }
@@ -13470,7 +10941,7 @@ var PageElement = function (_BaseElement) {
     get: function get$$1() {
       return this._contentElement.scrollTop;
     },
-    set: function set(newValue) {
+    set: function set$$1(newValue) {
       this._contentElement.scrollTop = newValue;
     }
   }], [{
@@ -13680,7 +11151,7 @@ var ProgressBarElement = function (_BaseElement) {
 
   }, {
     key: 'value',
-    set: function set(value) {
+    set: function set$$1(value) {
       if (typeof value !== 'number' || value < 0 || value > 100) {
         throw new Error('Invalid value');
       }
@@ -13701,7 +11172,7 @@ var ProgressBarElement = function (_BaseElement) {
 
   }, {
     key: 'secondaryValue',
-    set: function set(value) {
+    set: function set$$1(value) {
       if (typeof value !== 'number' || value < 0 || value > 100) {
         throw new Error('Invalid value');
       }
@@ -13722,7 +11193,7 @@ var ProgressBarElement = function (_BaseElement) {
 
   }, {
     key: 'indeterminate',
-    set: function set(value) {
+    set: function set$$1(value) {
       if (value) {
         this.setAttribute('indeterminate', '');
       } else {
@@ -13942,7 +11413,7 @@ var SplitterContentElement = function (_BaseElement) {
      * @param {*} page
      */
     ,
-    set: function set(page) {
+    set: function set$$1(page) {
       this._page = page;
     }
   }, {
@@ -13964,7 +11435,7 @@ var SplitterContentElement = function (_BaseElement) {
     get: function get$$1() {
       return this._pageLoader;
     },
-    set: function set(loader) {
+    set: function set$$1(loader) {
       if (!(loader instanceof PageLoader)) {
         throw Error('First parameter must be an instance of PageLoader');
       }
@@ -14761,7 +12232,7 @@ var SplitterElement = function (_BaseElement) {
     get: function get$$1() {
       return this._backButtonHandler;
     },
-    set: function set(callback) {
+    set: function set$$1(callback) {
       if (this._backButtonHandler) {
         this._backButtonHandler.destroy();
       }
@@ -15682,7 +13153,7 @@ var SplitterSideElement = function (_BaseElement) {
       return (/^\d+(px|%)$/.test(width) ? width : '80%'
       );
     },
-    set: function set(value) {
+    set: function set$$1(value) {
       this.setAttribute('width', value);
     }
   }, {
@@ -15695,7 +13166,7 @@ var SplitterSideElement = function (_BaseElement) {
      * @param {*} page
      */
     ,
-    set: function set(page) {
+    set: function set$$1(page) {
       this._page = page;
     }
   }, {
@@ -15716,7 +13187,7 @@ var SplitterSideElement = function (_BaseElement) {
     get: function get$$1() {
       return this._pageLoader;
     },
-    set: function set(loader) {
+    set: function set$$1(loader) {
       if (!(loader instanceof PageLoader)) {
         throw Error('First parameter must be an instance of PageLoader.');
       }
@@ -15898,7 +13369,7 @@ var ToolbarButtonElement = function (_BaseElement) {
     }
   }, {
     key: 'disabled',
-    set: function set(value) {
+    set: function set$$1(value) {
       return util.toggleAttribute(this, 'disabled', value);
     },
     get: function get$$1() {
@@ -15949,21 +13420,22 @@ window.addEventListener('DOMContentLoaded', function () {
   document.body._gestureDetector = new ons$1.GestureDetector(document.body);
 }, false);
 
-// setup loading placeholder
-ons$1.ready(function () {
-  ons$1._setupLoadingPlaceHolders();
-
-  // Simulate Device Back Button on ESC press
-  if (!ons$1.platform.isWebView()) {
-    document.body.addEventListener('keydown', function (event) {
-      if (event.keyCode === 27) {
-        ons$1._deviceBackButtonDispatcher.fireDeviceBackButtonEvent();
-      }
-    });
-  }
-});
+// // setup loading placeholder
+// ons.ready(function() {
+//   ons._setupLoadingPlaceHolders();
+//
+//   // Simulate Device Back Button on ESC press
+//   if (!ons.platform.isWebView()) {
+//     document.body.addEventListener('keydown', function(event) {
+//       if (event.keyCode === 27) {
+//         ons._deviceBackButtonDispatcher.fireDeviceBackButtonEvent();
+//       }
+//     })
+//   }
+// });
 
 // viewport.js
 new Viewport().setup();
 
 module.exports = ons$1;
+//# sourceMappingURL=onsenui.js.map
