@@ -3,7 +3,7 @@
   "version": "2.5.0",
   "description": "",
   "main": "onsenui.js",
-  "module": "onsenui.mjs",
+  "module": "onsenui.esm.js",
   "scripts": {},
   "author": "",
   "license": "Apache-2"
