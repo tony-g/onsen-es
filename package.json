@@ -2,7 +2,7 @@
   "name": "onsen-es",
   "version": "2.5.0",
   "description": "",
-  "main": "onsenui.js",
+  "main": "onsenui.esm.js",
   "module": "onsenui.esm.js",
   "scripts": {},
   "author": "",
